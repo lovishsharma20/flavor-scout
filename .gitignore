@@ -1,0 +1,26 @@
+# Environment / secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Data (keep folder structure via .gitkeep)
+data/raw/*.csv
+data/processed/*.csv
+*.log
+
+# Hugging Face / datasets cache (if created locally)
+.cache/
+huggingface/
