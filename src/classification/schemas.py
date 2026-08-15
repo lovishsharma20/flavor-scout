@@ -7,82 +7,79 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
-Category = Literal[
+Sentiment = Literal["positive", "neutral", "negative"]
+ConsumerIntent = Literal[
     "preference",
-    "complaint",
     "request",
+    "complaint",
+    "purchase_intent",
     "recommendation",
-    "comparison",
     "other",
+    "none",
 ]
-Sentiment = Literal["positive", "negative", "neutral", "mixed"]
-Intent = Literal[
-    "share_preference",
-    "complain",
-    "request_flavor",
-    "recommend",
-    "compare",
-    "ask_question",
-    "other",
-]
-PurchaseIntent = Literal["none", "low", "medium", "high"]
-BrandFit = Literal["strong", "moderate", "weak", "unknown"]
+BrandFit = Literal["strong", "moderate", "weak", "none"]
+Confidence = Literal["high", "medium", "low"]
 
 
-class CommentAnalysis(BaseModel):
-    """Structured LLM classification for one Reddit comment/post."""
+class ReviewAnalysis(BaseModel):
+    """Structured LLM classification for one Amazon review (Step 3)."""
 
     relevant: bool = Field(
         ...,
-        description="True if the text discusses flavors, taste, or related product feedback.",
+        description=(
+            "True only if the review is useful for Flavor Scout flavor discovery "
+            "in sports nutrition (protein, whey, supplements, electrolytes, "
+            "gummies, pre-workout, etc.). False for unrelated gear such as "
+            "hydration backpacks, tote bags, apparel, or equipment."
+        ),
     )
     flavor: Optional[str] = Field(
         default=None,
-        description="Primary flavor mentioned (e.g. chocolate, vanilla). Null if none.",
-    )
-    category: Category = Field(
-        ...,
-        description="High-level discussion type.",
+        description="Specific flavor named, requested, preferred, or criticized. Null if none.",
     )
     sentiment: Sentiment = Field(
         ...,
-        description="Overall sentiment toward taste/flavor/product.",
+        description="Overall sentiment of the review.",
     )
-    intent: Intent = Field(
+    intent: ConsumerIntent = Field(
         ...,
-        description="What the author is trying to do.",
-    )
-    purchase_intent: PurchaseIntent = Field(
-        ...,
-        description="Signal that the author may buy or switch products.",
+        description="Primary consumer intent.",
     )
     pain_point: Optional[str] = Field(
         default=None,
-        description="Short pain point if present (e.g. too sweet, chalky). Null if none.",
+        description="Actual consumer problem if stated. Null if none; do not invent.",
     )
     brand_fit: BrandFit = Field(
         ...,
-        description="How well this insight could inform a flavor/product brand decision.",
+        description=(
+            "Fit to HealthKart fitness-nutrition context (MuscleBlaze / HK Vitals / "
+            "TrueBasics style products). none if the product is unrelated. "
+            "Do not invent a HealthKart brand name."
+        ),
     )
-    confidence: float = Field(
+    reasoning: str = Field(
         ...,
-        ge=0.0,
-        le=1.0,
-        description="Model confidence between 0 and 1.",
+        description="Short justification for the classification, not a review summary.",
+    )
+    confidence: Confidence = Field(
+        ...,
+        description="Classifier confidence.",
     )
 
     @field_validator("flavor", "pain_point", mode="before")
     @classmethod
     def empty_str_to_none(cls, value: object) -> object:
+        if value is None:
+            return None
         if isinstance(value, str) and not value.strip():
             return None
         if isinstance(value, str):
             return value.strip()
         return value
 
-    @field_validator("confidence", mode="before")
+    @field_validator("reasoning", mode="before")
     @classmethod
-    def clamp_confidence(cls, value: object) -> object:
-        if isinstance(value, (int, float)):
-            return max(0.0, min(1.0, float(value)))
+    def strip_reasoning(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip()
         return value

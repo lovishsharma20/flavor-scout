@@ -6,7 +6,7 @@ Official source (historical, not live):
   Docs: https://amazon-reviews-2023.github.io/
 
 Streams the remote .jsonl.gz (does NOT save the ~986 MB file locally).
-Filters Flavor Scout–relevant reviews and writes data/raw/amazon_reviews.csv.
+Keeps a manageable MVP sample of relevant consumer reviews.
 """
 
 from __future__ import annotations
@@ -25,9 +25,9 @@ import pandas as pd
 
 from config import (
     AMAZON_CATEGORY,
-    AMAZON_MIN_REVIEW_CHARS,
     AMAZON_REVIEW_KEYWORDS,
     AMAZON_REVIEW_URL,
+    AMAZON_TARGET_REVIEWS,
 )
 
 logging.basicConfig(
@@ -44,6 +44,7 @@ OUTPUT_COLUMNS = [
     "category",
     "product_id",
     "parent_asin",
+    "product_title",
     "review_title",
     "review_text",
     "rating",
@@ -56,32 +57,36 @@ OUTPUT_COLUMNS = [
 def stream_review_records(
     url: str = AMAZON_REVIEW_URL,
     max_records: int | None = None,
-) -> Iterator[dict[str, Any]]:
+) -> Iterator[tuple[int, dict[str, Any] | None]]:
     """
-    Yield review JSON objects from the remote .jsonl.gz without writing it to disk.
+    Yield (source_index, record_or_none) from the remote .jsonl.gz.
 
-    Uses a streaming HTTP response + gzip decompressor so only a buffer is held
-    in memory (not the full compressed file).
+    Does not write the compressed source file to disk. record is None when JSON
+    is malformed.
     """
     request = Request(
         url,
         headers={"User-Agent": "FlavorScout/0.1 (research MVP; streaming reader)"},
     )
     logger.info("Opening remote stream: %s", url)
-    with urlopen(request, timeout=120) as response:  # noqa: S310 - fixed official URL
+    with urlopen(request, timeout=300) as response:  # noqa: S310 - fixed official URL
         with gzip.GzipFile(fileobj=response) as gz:
-            # Text wrapper over binary gzip stream
-            for idx, raw_line in enumerate(gz, start=1):
-                if max_records is not None and idx > max_records:
-                    break
+            yielded = 0
+            for raw_line in gz:
                 line = raw_line.decode("utf-8", errors="replace").strip()
                 if not line:
                     continue
+                yielded += 1
                 try:
-                    yield json.loads(line)
+                    record = json.loads(line)
                 except json.JSONDecodeError:
-                    logger.warning("Skipping malformed JSON on source row %s", idx)
+                    yield yielded, None
+                    if max_records is not None and yielded >= max_records:
+                        break
                     continue
+                yield yielded, record
+                if max_records is not None and yielded >= max_records:
+                    break
 
 
 def _to_iso_timestamp(raw_ts: Any) -> str:
@@ -109,20 +114,22 @@ def _review_timestamp(review: dict[str, Any]) -> Any:
 
 
 def is_relevant_review(review: dict[str, Any], keywords: list[str]) -> bool:
+    """Ingestion-level product/category match. Not LLM classification."""
     title = (review.get("title") or "").strip()
     text = (review.get("text") or "").strip()
-    if len(text) < AMAZON_MIN_REVIEW_CHARS:
-        return False
-    blob = f"{title} {text}".lower()
+    product_title = str(review.get("product_title") or review.get("item_title") or "")
+    blob = f"{title} {text} {product_title}".lower()
     return any(keyword.lower() in blob for keyword in keywords)
 
 
 def review_to_row(review: dict[str, Any]) -> dict[str, Any]:
+    product_title = review.get("product_title") or review.get("item_title") or ""
     return {
         "source": "amazon_reviews_2023",
         "category": AMAZON_CATEGORY,
         "product_id": (review.get("asin") or "").strip(),
         "parent_asin": (review.get("parent_asin") or "").strip(),
+        "product_title": str(product_title).strip(),
         "review_title": (review.get("title") or "").strip(),
         "review_text": (review.get("text") or "").strip(),
         "rating": review.get("rating"),
@@ -146,49 +153,68 @@ def duplicate_key(row: dict[str, Any]) -> str:
 
 def extract_relevant_reviews(
     max_records: int | None = None,
+    target_reviews: int = AMAZON_TARGET_REVIEWS,
     keywords: list[str] | None = None,
-) -> tuple[pd.DataFrame, int, int]:
-    """
-    Stream source reviews, keep keyword matches, drop duplicates.
-
-    Returns (dataframe, scanned_count, extracted_before_dedupe_info via df len after dedupe).
-    Also returns scanned and relevant-before-dedupe via logging; tuple is
-    (df, scanned, relevant_kept_after_dedupe) — we also track relevant pre-dedupe.
-    """
+) -> tuple[pd.DataFrame, dict[str, int]]:
     keywords = keywords or AMAZON_REVIEW_KEYWORDS
     rows: list[dict[str, Any]] = []
     seen: set[str] = set()
-    scanned = 0
-    relevant_raw = 0
+    stats = {
+        "scanned": 0,
+        "malformed": 0,
+        "missing_text": 0,
+        "irrelevant": 0,
+        "relevant_found": 0,
+        "duplicates_removed": 0,
+        "kept": 0,
+        "stopped_at_target": 0,
+    }
 
-    for review in stream_review_records(max_records=max_records):
-        scanned += 1
-        if scanned % 100_000 == 0:
+    for _idx, review in stream_review_records(max_records=max_records):
+        stats["scanned"] += 1
+        if stats["scanned"] % 100_000 == 0:
             logger.info(
-                "Scanned %s source records; relevant kept so far=%s",
-                scanned,
+                "Scanned %s source records; kept=%s / target=%s",
+                stats["scanned"],
                 len(rows),
+                target_reviews,
             )
 
-        if not is_relevant_review(review, keywords):
+        if review is None:
+            stats["malformed"] += 1
             continue
 
-        relevant_raw += 1
+        text = (review.get("text") or "").strip()
+        if not text:
+            stats["missing_text"] += 1
+            continue
+
+        if not is_relevant_review(review, keywords):
+            stats["irrelevant"] += 1
+            continue
+
+        stats["relevant_found"] += 1
         row = review_to_row(review)
         key = duplicate_key(row)
         if key in seen:
+            stats["duplicates_removed"] += 1
             continue
         seen.add(key)
         rows.append(row)
 
+        if len(rows) >= target_reviews:
+            stats["stopped_at_target"] = 1
+            logger.info(
+                "Reached target of %s unique relevant reviews after scanning %s source records.",
+                target_reviews,
+                stats["scanned"],
+            )
+            break
+
+    stats["kept"] = len(rows)
     df = pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
-    logger.info(
-        "Scan finished: scanned=%s, relevant_matched=%s, after_dedupe=%s",
-        scanned,
-        relevant_raw,
-        len(df),
-    )
-    return df, scanned, relevant_raw
+    logger.info("Scan finished: %s", stats)
+    return df, stats
 
 
 def probe_schema(sample_size: int = 1000) -> dict[str, Any]:
@@ -207,28 +233,25 @@ def probe_schema(sample_size: int = 1000) -> dict[str, Any]:
     alt_fields = ["helpful_votes", "sort_timestamp"]
 
     records: list[dict[str, Any]] = []
-    for review in stream_review_records(max_records=sample_size):
-        records.append(review)
+    for _idx, review in stream_review_records(max_records=sample_size):
+        if review is not None:
+            records.append(review)
 
     if not records:
         raise RuntimeError("Probe failed: no records received from remote stream.")
 
     field_counts: dict[str, int] = {}
-    all_keys: set[str] = set()
     for rec in records:
-        all_keys.update(rec.keys())
         for key in rec:
             field_counts[key] = field_counts.get(key, 0) + 1
 
     present_expected = [f for f in expected_fields if field_counts.get(f, 0) > 0]
     missing_expected = [f for f in expected_fields if field_counts.get(f, 0) == 0]
     present_alts = [f for f in alt_fields if field_counts.get(f, 0) > 0]
-
     relevant = sum(1 for r in records if is_relevant_review(r, AMAZON_REVIEW_KEYWORDS))
 
     report = {
         "records_read": len(records),
-        "unique_keys": sorted(all_keys),
         "field_counts": dict(sorted(field_counts.items())),
         "expected_present": present_expected,
         "expected_missing": missing_expected,
@@ -256,12 +279,46 @@ def save_reviews(df: pd.DataFrame, path: Path = RAW_OUTPUT_PATH) -> Path:
     return path
 
 
-def run_extract(max_records: int | None = None) -> tuple[Path, int, int, int]:
-    df, scanned, relevant_raw = extract_relevant_reviews(max_records=max_records)
+def date_range(df: pd.DataFrame) -> tuple[str, str]:
+    if df.empty or "timestamp" not in df.columns:
+        return "", ""
+    stamps = df["timestamp"].dropna().astype(str)
+    stamps = stamps[stamps.str.len() > 0]
+    if stamps.empty:
+        return "", ""
+    return str(stamps.min()), str(stamps.max())
+
+
+def run_extract(
+    max_records: int | None = None,
+    target_reviews: int = AMAZON_TARGET_REVIEWS,
+) -> tuple[Path, pd.DataFrame, dict[str, int]]:
+    df, stats = extract_relevant_reviews(
+        max_records=max_records,
+        target_reviews=target_reviews,
+    )
     if df.empty:
         raise RuntimeError("No relevant reviews extracted. Check keywords / connection.")
     out = save_reviews(df)
-    return out, scanned, relevant_raw, len(df)
+    return out, df, stats
+
+
+def print_report(out: Path, df: pd.DataFrame, stats: dict[str, int]) -> None:
+    start, end = date_range(df)
+    malformed_or_missing = stats["malformed"] + stats["missing_text"]
+    print("Amazon Reviews 2023 ingestion complete (historical sample).")
+    print(f"Source records scanned:              {stats['scanned']}")
+    print(f"Relevant records found:              {stats['relevant_found']}")
+    print(f"Duplicates removed:                  {stats['duplicates_removed']}")
+    print(f"Malformed records:                   {stats['malformed']}")
+    print(f"Missing review text:                 {stats['missing_text']}")
+    print(f"Clearly irrelevant records skipped:  {stats['irrelevant']}")
+    print(f"Malformed + missing text:            {malformed_or_missing}")
+    print(f"Final row count:                     {len(df)}")
+    print(f"Date range:                          {start} to {end}")
+    print(f"Stopped at target:                   {bool(stats['stopped_at_target'])}")
+    print(f"Output path:                         {out}")
+    print("Errors:                               (none)")
 
 
 def main() -> None:
@@ -285,7 +342,7 @@ def main() -> None:
     parser.add_argument(
         "--full",
         action="store_true",
-        help="Scan the full remote stream (can take a long time).",
+        help="Extract until AMAZON_TARGET_REVIEWS unique relevant reviews are kept.",
     )
     args = parser.parse_args()
 
@@ -316,23 +373,18 @@ def main() -> None:
 
         if not args.full and args.max_records is None:
             print(
-                "Refusing to start a full scan without --full.\n"
-                "First run a probe:\n"
-                "  python -m src.ingestion.amazon_ingest --probe 1000\n"
-                "When approved, run:\n"
+                "Refusing to start extraction without --full.\n"
+                "Run:\n"
                 "  python -m src.ingestion.amazon_ingest --full"
             )
             sys.exit(2)
 
         max_records = None if args.full else args.max_records
-        out, scanned, relevant_raw, kept = run_extract(max_records=max_records)
-        print("Amazon review extraction complete (historical sample).")
-        print(f"Source records scanned:   {scanned}")
-        print(f"Relevant matched:         {relevant_raw}")
-        print(f"After dedupe (saved):     {kept}")
-        print(f"Saved to:                 {out}")
+        out, df, stats = run_extract(max_records=max_records)
+        print_report(out, df, stats)
     except Exception as exc:  # noqa: BLE001 - top-level CLI guard
         logger.error("Amazon ingestion failed: %s", exc)
+        print(f"Errors: {exc}")
         sys.exit(1)
 
 

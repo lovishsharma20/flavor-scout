@@ -48,8 +48,8 @@ EXPECTED_COLUMNS = [
 def load_raw(path: Path = RAW_INPUT_PATH) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(
-            f"Raw file not found: {path}. Run Reddit ingestion first:\n"
-            "  python -m src.ingestion.reddit_ingest"
+            f"Raw file not found: {path}. Run Amazon ingestion first:\n"
+            "  python -m src.ingestion.amazon_ingest --full"
         )
     df = pd.read_csv(path)
     missing = [col for col in EXPECTED_COLUMNS if col not in df.columns]
