@@ -275,7 +275,7 @@ def run() -> dict[str, Any]:
 def main() -> None:
     try:
         payload = run()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("%s", exc)
         sys.exit(1)
     print("=== Flavor Scout Step 7 GOLDEN CANDIDATE ===")

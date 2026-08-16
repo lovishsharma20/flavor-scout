@@ -69,7 +69,7 @@ def stream_review_records(
         headers={"User-Agent": "FlavorScout/0.1 (research MVP; streaming reader)"},
     )
     logger.info("Opening remote stream: %s", url)
-    with urlopen(request, timeout=300) as response:  # noqa: S310 - fixed official URL
+    with urlopen(request, timeout=300) as response:
         with gzip.GzipFile(fileobj=response) as gz:
             yielded = 0
             for raw_line in gz:
@@ -96,7 +96,7 @@ def _to_iso_timestamp(raw_ts: Any) -> str:
         value = int(raw_ts)
     except (TypeError, ValueError):
         return str(raw_ts)
-    if value > 1_000_000_000_000:  # milliseconds
+    if value > 1_000_000_000_000:
         value = value / 1000.0
     return datetime.fromtimestamp(value, tz=timezone.utc).isoformat()
 
@@ -382,7 +382,7 @@ def main() -> None:
         max_records = None if args.full else args.max_records
         out, df, stats = run_extract(max_records=max_records)
         print_report(out, df, stats)
-    except Exception as exc:  # noqa: BLE001 - top-level CLI guard
+    except Exception as exc:
         logger.error("Amazon ingestion failed: %s", exc)
         print(f"Errors: {exc}")
         sys.exit(1)

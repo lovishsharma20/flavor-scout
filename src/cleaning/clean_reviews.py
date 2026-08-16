@@ -36,7 +36,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RAW_INPUT_PATH = PROJECT_ROOT / "data" / "raw" / "amazon_reviews.csv"
 PROCESSED_OUTPUT_PATH = PROJECT_ROOT / "data" / "processed" / "processed_reviews.csv"
 
-# Promo/spam for Amazon reviews. Do not treat "amazon.com" mentions as spam.
 SPAM_PATTERNS = [
     r"\buse\s+(my\s+)?code\b",
     r"\bpromo\s*code\b",
@@ -97,7 +96,6 @@ def enrich_with_metadata(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, int]
 
     meta_df = pd.DataFrame(meta_map.values())
     working = df.copy()
-    # Incoming CSV has an empty product_title column; replace from metadata.
     drop_cols = [c for c in working.columns if c in {
         "product_title", "brand", "store", "main_category",
         "product_categories", "product_description", "average_rating",
@@ -287,7 +285,7 @@ def main() -> None:
     except FileNotFoundError as exc:
         logger.error("%s", exc)
         sys.exit(1)
-    except Exception as exc:  # noqa: BLE001 - top-level CLI guard
+    except Exception as exc:
         logger.error("Step 2 failed: %s", exc)
         sys.exit(1)
 

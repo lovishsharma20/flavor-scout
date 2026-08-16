@@ -1,1 +1,0 @@
-# Flavor Scout package

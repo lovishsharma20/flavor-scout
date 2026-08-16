@@ -1,7 +1,5 @@
-# Environment / secrets
 .env
 
-# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -10,13 +8,11 @@ __pycache__/
 venv/
 env/
 
-# IDE / OS
 .idea/
 .vscode/
 .DS_Store
 Thumbs.db
 
-# Data (keep folder structure via .gitkeep)
 data/raw/*.csv
 data/processed/*.csv
 !data/processed/flavor_trends.csv
@@ -29,6 +25,4 @@ data/processed/*.csv
 !data/processed/golden_candidate.json
 *.log
 
-# Streamlit
 .streamlit/secrets.toml
-

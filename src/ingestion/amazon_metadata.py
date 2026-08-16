@@ -99,7 +99,7 @@ def fetch_metadata_for_asins(
         headers={"User-Agent": "FlavorScout/0.1 (research MVP; metadata stream)"},
     )
     logger.info("Opening metadata stream for %s parent_asin values", len(wanted))
-    with urlopen(request, timeout=300) as response:  # noqa: S310 - fixed official URL
+    with urlopen(request, timeout=300) as response:
         with gzip.GzipFile(fileobj=response) as gz:
             for raw_line in gz:
                 line = raw_line.decode("utf-8", errors="replace").strip()

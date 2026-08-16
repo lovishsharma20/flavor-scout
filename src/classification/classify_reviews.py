@@ -210,7 +210,7 @@ def analyze_dataframe(df: pd.DataFrame, client: OpenAI) -> tuple[pd.DataFrame, i
             row.update(analysis.model_dump())
             rows.append(row)
             success += 1
-        except Exception as exc:  # noqa: BLE001 - continue batch on single failures
+        except Exception as exc:
             failed += 1
             logger.error("Skipping row %s due to error: %s", idx, exc)
             if "quota exceeded" in str(exc).lower() or "insufficient_quota" in str(exc).lower():
@@ -299,7 +299,7 @@ def main() -> None:
     except (FileNotFoundError, ValueError) as exc:
         logger.error("%s", exc)
         sys.exit(1)
-    except Exception as exc:  # noqa: BLE001 - top-level CLI guard
+    except Exception as exc:
         logger.error("Classification failed: %s", exc)
         sys.exit(1)
 

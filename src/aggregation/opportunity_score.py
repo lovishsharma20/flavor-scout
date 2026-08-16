@@ -30,9 +30,6 @@ TRENDS_PATH = PROJECT_ROOT / "data" / "processed" / "flavor_trends.csv"
 OUTPUT_PATH = PROJECT_ROOT / "data" / "processed" / "opportunity_scores.csv"
 STATS_PATH = PROJECT_ROOT / "data" / "processed" / "opportunity_scores_stats.json"
 
-# Assignment baseline: Demand 30, Growth 20, Sentiment 20, Purchase 15, Brand 15.
-# Growth and Purchase Intent have no reliable signal in this dataset, so they
-# are excluded from the numerical score and the remaining 65 points are renormalized.
 WEIGHT_DEMAND = 30 / 65
 WEIGHT_SENTIMENT = 20 / 65
 WEIGHT_BRAND_FIT = 15 / 65
@@ -232,7 +229,7 @@ def run(
 def main() -> None:
     try:
         scored, _stats = run()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("%s", exc)
         sys.exit(1)
     print("=== Flavor Scout Step 5 OPPORTUNITY SCORING ===")

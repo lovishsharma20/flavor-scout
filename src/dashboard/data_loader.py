@@ -22,8 +22,6 @@ REQUIRED = {
 }
 
 
-# Presentation-only extra filter for container SKUs that slipped past older
-# classifications. Does not rewrite analyzed_reviews.csv.
 _EVIDENCE_GEAR_RE = re.compile(
     r"\b(flask|softflask|hydrapak|soft flask|gel flask|water bottle|sport bottle|"
     r"shaker|tumbler|hydration (pack|backpack|bladder))\b",

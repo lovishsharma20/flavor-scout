@@ -33,8 +33,6 @@ MENTION_QC_PATH = PROJECT_ROOT / "data" / "processed" / "flavor_mention_qc.csv"
 TRENDS_PATH = PROJECT_ROOT / "data" / "processed" / "flavor_trends.csv"
 STATS_PATH = PROJECT_ROOT / "data" / "processed" / "flavor_trends_stats.json"
 
-# Scoring eligibility threshold (not an Opportunity Score). Single-mention
-# flavors stay in the trend table but are flagged ineligible for later scoring.
 MIN_MENTIONS_FOR_SCORING = 2
 MIN_MENTIONS_FOR_GROWTH = 5
 MIN_WINDOW_MENTIONS_FOR_GROWTH = 2
@@ -248,7 +246,7 @@ def run(
 def main() -> None:
     try:
         mentions, trends, stats = run()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("%s", exc)
         sys.exit(1)
     print("=== Flavor Scout Step 4 TREND AGGREGATION ===")

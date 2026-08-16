@@ -7,7 +7,6 @@ from __future__ import annotations
 import re
 import unicodedata
 
-# --- thresholds / patterns (easy to tune) ---
 
 MIN_CHARS = 20
 MIN_WORDS = 4
@@ -19,7 +18,6 @@ DELETED_MARKERS = {
     "removed",
 }
 
-# Topic signals we want to keep (flavor / product discussion)
 RELEVANCE_KEYWORDS = [
     "flavor",
     "flavour",
@@ -103,12 +101,12 @@ BOT_PATTERNS = [
 
 EMOJI_RE = re.compile(
     "["
-    "\U0001F300-\U0001F9FF"  # symbols & pictographs / supplemental
+    "\U0001F300-\U0001F9FF"
     "\U0001FA00-\U0001FAFF"
-    "\U00002700-\U000027BF"  # dingbats
-    "\U0001F600-\U0001F64F"  # emoticons
-    "\U0001F680-\U0001F6FF"  # transport
-    "\U00002600-\U000026FF"  # misc symbols
+    "\U00002700-\U000027BF"
+    "\U0001F600-\U0001F64F"
+    "\U0001F680-\U0001F6FF"
+    "\U00002600-\U000026FF"
     "]+",
     flags=re.UNICODE,
 )
@@ -147,7 +145,6 @@ def is_emoji_only(text: str, max_non_emoji_chars: int = 3) -> bool:
     if not raw:
         return True
     without_emoji = EMOJI_RE.sub("", raw)
-    # keep letters/digits only
     leftover = re.sub(r"[^\w]+", "", without_emoji, flags=re.UNICODE)
     return len(leftover) <= max_non_emoji_chars
 

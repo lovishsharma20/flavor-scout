@@ -232,7 +232,7 @@ def run(
 def main() -> None:
     try:
         result, stats = run()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("%s", exc)
         sys.exit(1)
     print("=== Flavor Scout Step 6 DECISION ENGINE ===")

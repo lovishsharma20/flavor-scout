@@ -82,7 +82,6 @@ def clean_dataframe(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, int]]:
     drop_mask(working["text"].map(is_spam), "spam_or_promo")
     drop_mask(working["text"].map(is_irrelevant), "irrelevant")
 
-    # Exact ID duplicates (same comment/post id), then near-duplicate text
     before = len(working)
     working = working.drop_duplicates(subset=["source", "post_id", "comment_id"], keep="first")
     removals["duplicate_ids"] = before - len(working)
@@ -147,7 +146,7 @@ def main() -> None:
     except FileNotFoundError as exc:
         logger.error("%s", exc)
         sys.exit(1)
-    except Exception as exc:  # noqa: BLE001 - top-level CLI guard
+    except Exception as exc:
         logger.error("Cleaning failed: %s", exc)
         sys.exit(1)
 

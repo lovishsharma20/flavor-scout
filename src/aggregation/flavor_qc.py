@@ -9,7 +9,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-# Exact phrases after lowercase/whitespace normalization.
 EXCLUDED_MEAL_DISH = {
     "beef stroganoff",
     "sweet & sour pork",
@@ -69,7 +68,6 @@ _MEAL_MARKERS = (
     "sweet and sour",
 )
 
-# Obvious plural → singular only. Do not merge distinct flavor families.
 _PLURAL_MAP = {
     "strawberries": "strawberry",
     "blueberries": "blueberry",
