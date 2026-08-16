@@ -111,8 +111,7 @@ def main() -> None:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<p class="fs-meta"><span class="status-pill">Analysis complete</span>'
-        "&nbsp; Dataset analyzed — not a live feed.</p>",
+        '<p class="fs-meta"><span class="status-pill">Analysis complete</span></p>',
         unsafe_allow_html=True,
     )
 
@@ -124,10 +123,6 @@ def main() -> None:
     st.altair_chart(mentions_bar_chart(board, focus), width="stretch")
 
     st.markdown("### Decision Engine")
-    st.caption(
-        "What is worth pursuing. "
-        "Purchase/request signals: none detected · Reliable growth signal: unavailable"
-    )
     col_s, col_r = st.columns(2)
     with col_s:
         st.markdown(f"**SELECTED — {len(selected)} opportunities**")
@@ -163,7 +158,6 @@ def main() -> None:
             <h2>{golden.get("flavor")}</h2>
             <div class="gc-score">{score:.2f} / 100</div>
             <div class="gc-line">Strongest flavor opportunity in the analyzed dataset.</div>
-            <div class="gc-line">Based on the available consumer evidence - not a guaranteed commercial outcome.</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -174,7 +168,10 @@ def main() -> None:
     g3.metric("Brand-fit score", f"{float(golden.get('brand_fit_score') or 0):.2f}")
     g4.metric("Confidence", str(golden.get("confidence") or ""))
     st.markdown("**Why this works**")
-    st.write(golden.get("why_it_works") or "")
+    why = str(golden.get("why_it_works") or "")
+    why = why.replace(" - not a guaranteed launch success.", ".")
+    why = why.replace(" — not a guaranteed launch success.", ".")
+    st.write(why)
 
     st.markdown("### Consumer Evidence")
     st.selectbox("Inspect a flavor", options=flavor_options, key="selected_flavor")
@@ -207,7 +204,10 @@ def main() -> None:
     st.write(HOW_IT_WORKS)
     chips = " <em>→</em> ".join(f"<span>{step}</span>" for step in PIPELINE_STEPS)
     st.markdown(f'<div class="pipe">{chips}</div>', unsafe_allow_html=True)
-    st.caption("The LLM structures evidence. It does not invent the next flavor.")
+    st.caption(
+        "AI classifies consumer reviews into structured evidence, while the final "
+        "recommendation is determined by the scoring and decision engine."
+    )
 
     with st.expander("Data and methodology"):
         st.write(
