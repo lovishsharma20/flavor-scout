@@ -1,0 +1,96 @@
+{
+  "flavor": "Strawberry",
+  "rank": 1,
+  "opportunity_score": 91.4538,
+  "mentions": 9,
+  "positive_rate": 0.8889,
+  "brand_fit_score": 77.78,
+  "confidence": "HIGH",
+  "decision": "SELECTED",
+  "purchase_intent_available": false,
+  "growth_available": false,
+  "recommended_brand": "Needs validation",
+  "recommended_brand_rationale": "Most strawberry mentions in this sample are freeze-dried fruit snacks or fruit powders on Amazon Sports & Outdoors, plus at least one hydration-bottle SKU. That is not enough to assign MuscleBlaze (protein/performance), HK Vitals (wellness), or TrueBasics (premium functional) without further category validation.",
+  "why_it_works": "Strawberry is the strongest opportunity in the analyzed dataset because it has the highest Opportunity Score among Decision Engine SELECTED flavors (91.45/100), the most eligible mentions (9), 88.9% positive sentiment, and a brand-fit score of 77.78/100. Based on the available consumer evidence, it is the best-supported flavor concept in this sample - not a guaranteed launch success.",
+  "evidence_summary": {
+    "source": "Amazon Reviews 2023 Sports & Outdoors (historical, through Sep 2023)",
+    "universe": "relevant reviews with eligible aggregation_flavor",
+    "mentions": 9,
+    "positive_rate": 0.8889,
+    "brand_fit_score_0_to_100": 77.78,
+    "opportunity_score": 91.4538,
+    "confidence": "HIGH",
+    "selected_pool": [
+      "Strawberry",
+      "Chocolate",
+      "Lemonade",
+      "Banana"
+    ],
+    "representative_reviews": [
+      {
+        "review_key": "52d6bfad5738fb542b44",
+        "product_title": "Nutri-Fruit Powder Strawberry - 5 oz",
+        "sentiment": "positive",
+        "intent": "preference",
+        "quote": "I add this powder to my vanilla protein mix instead of Splenda or other sweetener.  I prefer the Black Raspberry, same brand, but that is just a personal preference.  This is pretty good and I plan to buy some banana po\u2026"
+      },
+      {
+        "review_key": "8798c8f1b5378a330d29",
+        "product_title": "Freeze Dried Sliced Strawberries by Nutristore | Pack of 2 | Healthy Snack | Emergency Survival Bulk Food Storage | Amaz",
+        "sentiment": "positive",
+        "intent": "praise",
+        "quote": "Yummy freeze dried strawberries!  I first had freeze dried strawberries years ago in the Special K red cereal and while the cereal, overall, sucked, I became mildly obsessed with the dried strawberries and would buy box\u2026"
+      },
+      {
+        "review_key": "7073bd8722feb2374596",
+        "product_title": "Natierra Nature's Organic Freeze-Dried Strawberries | Gluten Free & Vegan | 1.2 Ounce (Pack of 3)",
+        "sentiment": "positive",
+        "intent": "praise",
+        "quote": "Delicious but very expensive for a small amount. These are great to snack on. Or rehydrate them for your protein shakes. I personally find them better as a snack. I usually get a bigger more expensive package and weigh\u2026"
+      }
+    ]
+  },
+  "why_it_beat_other_selected": [
+    {
+      "flavor": "Chocolate",
+      "opportunity_score": 78.0201,
+      "mentions": 7,
+      "reason": "Lower Opportunity Score than Strawberry (78.0201 vs 91.4538)."
+    },
+    {
+      "flavor": "Lemonade",
+      "opportunity_score": 55.3119,
+      "mentions": 3,
+      "reason": "Lower Opportunity Score than Strawberry (55.3119 vs 91.4538)."
+    },
+    {
+      "flavor": "Banana",
+      "opportunity_score": 52.748,
+      "mentions": 3,
+      "reason": "Lower Opportunity Score than Strawberry (52.7480 vs 91.4538)."
+    }
+  ],
+  "limitations": [
+    "Purchase intent and explicit flavor requests are 0 in the eligible sample.",
+    "No reliable flavor-level temporal growth; stored growth splits were not used.",
+    "The source category is Sports & Outdoors, so eligible flavor volume is small (9 strawberry mentions).",
+    "Scores use only Demand, Sentiment, and Brand Fit after dropping unavailable Growth and Purchase Intent pillars.",
+    "This is the strongest evidence-backed candidate in this dataset, not a forecast that the flavor will succeed."
+  ],
+  "anti_hallucination": {
+    "llm_role": "Structure consumer evidence (relevance, flavor, sentiment, intent, pain_point, brand_fit).",
+    "final_decision_role": "Deterministic aggregation, scoring, Decision Engine, then max Opportunity Score among SELECTED.",
+    "llm_did_not": [
+      "choose the Golden Candidate",
+      "invent demand, growth, or purchase intent",
+      "invent consumer quotes",
+      "create a flavor absent from classified evidence"
+    ],
+    "source_of_truth": "Classified Amazon review rows and derived CSVs, not model imagination."
+  },
+  "score_audit": {
+    "opportunity_score_from_decision_engine": 91.4538,
+    "opportunity_score_from_scores_csv": 91.4538,
+    "match": true
+  }
+}

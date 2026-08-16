@@ -25,6 +25,8 @@ data/processed/*.csv
 !data/processed/opportunity_scores_stats.json
 !data/processed/decision_engine_results.csv
 !data/processed/decision_engine_stats.json
+!data/processed/golden_candidate.csv
+!data/processed/golden_candidate.json
 *.log
 
 # Hugging Face / datasets cache (if created locally)
