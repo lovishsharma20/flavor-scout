@@ -29,6 +29,6 @@ data/processed/*.csv
 !data/processed/golden_candidate.json
 *.log
 
-# Hugging Face / datasets cache (if created locally)
-.cache/
-huggingface/
+# Streamlit
+.streamlit/secrets.toml
+
