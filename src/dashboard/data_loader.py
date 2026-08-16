@@ -108,12 +108,12 @@ def load_dashboard_data() -> DashboardData:
     )
 
 
-def load_review_evidence(flavor: str, limit: int = 5) -> pd.DataFrame:
+def load_review_evidence(flavor: str, limit: int = 5) -> tuple[pd.DataFrame, int]:
     """Load a few classified reviews for one eligible flavor. Cached by the UI."""
     qc_path = PROCESSED / "flavor_mention_qc.csv"
     reviews_path = PROCESSED / "analyzed_reviews.csv"
     if not qc_path.exists() or not reviews_path.exists():
-        return pd.DataFrame()
+        return pd.DataFrame(), 0
     qc = pd.read_csv(
         qc_path,
         usecols=["review_key", "aggregation_flavor", "eligible"],
@@ -123,7 +123,7 @@ def load_review_evidence(flavor: str, limit: int = 5) -> pd.DataFrame:
     )
     keys = set(qc.loc[keep, "review_key"].astype(str))
     if not keys:
-        return pd.DataFrame()
+        return pd.DataFrame(), 0
     wanted = [
         "review_key",
         "product_title",
@@ -154,4 +154,5 @@ def load_review_evidence(flavor: str, limit: int = 5) -> pd.DataFrame:
             lambda t: bool(_EVIDENCE_GEAR_RE.search(t))
         )
         matched = matched.loc[~gear & ~title_gear]
-    return matched.head(limit)
+    eligible_total = int(len(matched))
+    return matched.head(limit), eligible_total

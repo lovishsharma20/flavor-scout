@@ -61,7 +61,7 @@ def _cached_bundle():
 
 
 @st.cache_data(show_spinner=False)
-def _cached_evidence(flavor: str) -> pd.DataFrame:
+def _cached_evidence(flavor: str) -> tuple[pd.DataFrame, int]:
     return load_review_evidence(flavor, limit=5)
 
 
@@ -101,27 +101,20 @@ def main() -> None:
         "opportunity_score", ascending=False
     )
 
-    left, right = st.columns([3.2, 1.1])
-    with left:
-        st.markdown('<div class="fs-kicker">Flavor Scout</div>', unsafe_allow_html=True)
-        st.title("Consumer intelligence for HealthKart's next flavor")
-        st.markdown(
-            '<p class="fs-subtitle">Amazon Reviews • AI-assisted analysis • Deterministic scoring</p>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            '<p class="fs-meta"><span class="status-pill">Analysis complete</span>'
-            "&nbsp; Dataset analyzed — not a live feed.</p>",
-            unsafe_allow_html=True,
-        )
-    with right:
-        with st.expander("How to read this dashboard", expanded=False):
-            st.write(
-                "Trend Wall shows what consumers mentioned. "
-                "Decision Engine shows what is worth pursuing. "
-                "Golden Candidate is the strongest opportunity. "
-                "Evidence and methodology explain why, and what is missing."
-            )
+    st.title("Flavor Scout")
+    st.markdown(
+        '<p class="fs-subtitle">Consumer intelligence for HealthKart\'s next flavor</p>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<p class="fs-subtitle">Amazon Reviews • AI-assisted analysis • Deterministic scoring</p>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<p class="fs-meta"><span class="status-pill">Analysis complete</span>'
+        "&nbsp; Dataset analyzed — not a live feed.</p>",
+        unsafe_allow_html=True,
+    )
 
     st.markdown("### Market pulse")
     kpi_row(data.stats, int(len(selected)))
@@ -182,24 +175,32 @@ def main() -> None:
     g4.metric("Confidence", str(golden.get("confidence") or ""))
     st.markdown("**Why this works**")
     st.write(golden.get("why_it_works") or "")
-    st.write("**Brand recommendation: Needs validation**")
-    st.caption(
-        "Current evidence is not sufficient to assign Strawberry to a specific HealthKart brand."
-    )
 
-    st.markdown("### Evidence")
-    st.caption("Reviews that contributed to eligible flavor analysis for the inspected opportunity.")
+    st.markdown("### Consumer Evidence")
     st.selectbox("Inspect a flavor", options=flavor_options, key="selected_flavor")
     focus = st.session_state.selected_flavor
+    golden_name = str(golden.get("flavor") or "Strawberry")
+    if focus == golden_name:
+        st.caption(
+            "Representative consumer reviews supporting the Golden Candidate: Strawberry."
+        )
+    else:
+        st.caption(f"Representative consumer reviews supporting {focus}.")
     focus_row = board.loc[board["flavor"].astype(str) == focus].iloc[0]
     flavor_metric_strip(focus_row)
+    eligible_total = int(focus_row["mentions"])
     try:
-        evidence = _cached_evidence(focus)
+        evidence, eligible_total = _cached_evidence(focus)
     except Exception:
         evidence = pd.DataFrame()
     fallback = None
-    if evidence.empty and focus == str(golden.get("flavor")):
+    if evidence.empty and focus == golden_name:
         fallback = (golden.get("evidence_summary") or {}).get("representative_reviews")
+    shown = 0 if evidence is None or evidence.empty else len(evidence)
+    if shown == 0 and fallback:
+        shown = len(fallback)
+    if shown:
+        st.caption(f"Showing {shown} of {eligible_total} eligible mentions")
     evidence_cards(evidence, fallback)
 
     st.markdown("### Why you can trust this")
@@ -223,7 +224,7 @@ def main() -> None:
             f"- Brand: {golden.get('recommended_brand_rationale') or 'Needs validation.'}\n"
             "- MuscleBlaze = performance/gym/protein; HK Vitals = wellness/lifestyle; "
             "TrueBasics = premium/functional wellness. No brand is forced without SKU evidence.\n"
-            "- Evidence cards show only eligible, non-gear reviews for the inspected flavor.\n"
+            "- Consumer Evidence shows only eligible, non-gear reviews for the inspected flavor.\n"
             "- Recommendation is based on this dataset and is not a guaranteed commercial outcome."
         )
 

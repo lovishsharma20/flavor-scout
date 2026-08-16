@@ -16,10 +16,3 @@ HOW_IT_WORKS = (
     "and Golden Candidate logic are deterministic. Underlying consumer data "
     "is the source of truth."
 )
-
-LAYOUT_RATIONALE = (
-    "This dashboard follows a product manager's decision journey: first see "
-    "what consumers are talking about, then which ideas are worth pursuing, "
-    "then the strongest opportunity, then evidence and methodology so the "
-    "recommendation is auditable."
-)

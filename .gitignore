@@ -15,6 +15,7 @@ Thumbs.db
 
 data/raw/*.csv
 data/processed/*.csv
+data/processed/*.json
 !data/processed/flavor_trends.csv
 !data/processed/flavor_trends_stats.json
 !data/processed/opportunity_scores.csv

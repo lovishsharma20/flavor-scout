@@ -1,12 +1,12 @@
 # Flavor Scout
 
-A consumer intelligence pipeline for identifying evidence-backed flavor opportunities for HealthKart (MuscleBlaze, HK Vitals, TrueBasics).
+Consumer intelligence for identifying evidence-backed flavor opportunities for HealthKart (MuscleBlaze, HK Vitals, TrueBasics).
 
 This is a completed interview MVP. Analysis is already finished offline. The dashboard does **not** call an LLM and is **not** a live Amazon feed.
 
 ## Problem
 
-Consumer product reviews contain useful flavor preferences, complaints, and pain points, but the text is unstructured. A product team cannot reliably turn thousands of reviews into a launch decision without a clear evidence trail.
+Consumer reviews contain useful flavor preferences, complaints, and pain points, but the text is unstructured. A product team cannot turn thousands of reviews into a launch decision without a clear evidence trail.
 
 ## Solution
 
@@ -44,20 +44,20 @@ Completed analysis:
 
 ## AI classification
 
-The LLM classifies **each review**, not the dataset as a whole. For every review it returns structured fields:
+The LLM classifies **each review**, not the dataset as a whole. For every review it returns:
 
 - relevance
-- flavor extraction
+- flavor
 - sentiment
 - intent
-- pain-point extraction
-- brand-fit assessment (`strong` / `moderate` / `weak` / `none`)
+- pain point
+- brand fit (`strong` / `moderate` / `weak` / `none`)
 - reasoning
 - confidence
 
-The LLM structures evidence from real review text. It does **not** choose the Golden Candidate and does not generate the Opportunity Score.
+The LLM structures evidence from real review text. It does **not** choose the Golden Candidate and does not compute the Opportunity Score.
 
-Classification used OpenAI `gpt-4.1-mini` for the full 7,931-review run (Groq remains available as an alternative provider). Re-running classification is not required to use the dashboard and should not be done unless you explicitly intend to spend API budget.
+The full 7,931-review run used OpenAI `gpt-4.1-mini`. Groq remains available as an alternative provider. Re-running classification is not required to use the dashboard.
 
 ## Anti-hallucination architecture
 
@@ -78,7 +78,7 @@ Those signals were **not fabricated** and were **excluded** from the numerical s
 - Sentiment: 20 / 65
 - Brand Fit: 15 / 65
 
-Demand is min-max normalized mention volume among the 11 scoring candidates (2–9 mentions). Sentiment is the positive-share × 100. Brand fit is the 0–1 aggregation score scaled to 0–100.
+Demand is min-max normalized mention volume among the 11 scoring candidates (2–9 mentions). Sentiment is the positive share × 100. Brand fit is the 0–1 aggregation score scaled to 0–100.
 
 ## Final result
 
@@ -86,7 +86,7 @@ Demand is min-max normalized mention volume among the 11 scoring candidates (2�
 
 Highest Opportunity Score among Decision Engine SELECTED flavors. 9 eligible mentions, 88.9% positive sentiment, brand-fit 77.78, HIGH confidence.
 
-Brand recommendation: **Needs validation**. Current evidence is mostly freeze-dried fruit / fruit powder in Sports & Outdoors, not a clear MuscleBlaze / HK Vitals / TrueBasics SKU.
+Current evidence is mostly freeze-dried fruit / fruit powder in Sports & Outdoors. That is not enough to assign MuscleBlaze, HK Vitals, or TrueBasics without further category validation. The dashboard reports brand-fit as a score; it does not force a brand name.
 
 **SELECTED**
 
@@ -121,13 +121,14 @@ Missing purchase intent and growth were **not** used as automatic reject reasons
 
 The Streamlit app is a presentation layer over completed analysis files. It does not call OpenAI or Groq.
 
-Product-manager journey:
+Product-manager journey (one page, top to bottom):
 
-1. **Trend Wall** — what consumers in this dataset mentioned
-2. **Decision Engine** — what is worth pursuing (selected vs rejected)
-3. **Golden Candidate** — what is #1
-4. **Evidence** — why, using real review excerpts and structured fields
-5. **Trust / methodology** — how the AI is used, and what is missing
+1. **Market Pulse** — how large the analyzed dataset is
+2. **Trend Wall** — what consumers in this dataset mentioned
+3. **Decision Engine** — what is worth pursuing (selected vs rejected)
+4. **Golden Candidate** — the strongest opportunity
+5. **Consumer Evidence** — supporting reviews for the inspected flavor
+6. **Trust / methodology** — how the AI is used, and what is missing
 
 ### Why this layout?
 
@@ -151,6 +152,10 @@ Open http://localhost:8501
 The dashboard needs the completed files already in `data/processed/` (`flavor_trends.csv`, `opportunity_scores.csv`, `decision_engine_results.csv`, `golden_candidate.json`). It does **not** need an API key.
 
 To reproduce ingestion or classification from scratch, copy `.env.example` to `.env` and add keys. Do not paste keys into chat or commit `.env`.
+
+## Hosted dashboard
+
+A Streamlit Community Cloud deployment is planned for the assignment deliverable. It is **not** live yet. A clean GitHub checkout can run the dashboard locally from the tracked analysis files. Full review-level evidence cards also use local `analyzed_reviews.csv` and `flavor_mention_qc.csv` (gitignored because of size). If those files are absent, Strawberry still shows stored excerpts from `golden_candidate.json`.
 
 ## License / use
 

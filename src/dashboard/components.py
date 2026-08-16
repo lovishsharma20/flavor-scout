@@ -2,10 +2,21 @@
 
 from __future__ import annotations
 
+import html
+import re
 from typing import Any
 
 import pandas as pd
 import streamlit as st
+
+_BR_RE = re.compile(r"<br\s*/?>", flags=re.IGNORECASE)
+
+
+def _clean_review_text(raw: object) -> str:
+    text = html.unescape(str(raw or ""))
+    text = _BR_RE.sub(" ", text)
+    text = text.replace("\n", " ").replace("\r", " ")
+    return " ".join(text.split())
 
 
 def _label(value: object, empty: str = "None recorded") -> str:
@@ -34,13 +45,16 @@ def flavor_metric_strip(row: pd.Series) -> None:
     e.metric("Confidence", str(row["confidence"]))
 
 
-def evidence_cards(reviews: pd.DataFrame, fallback: list[dict[str, Any]] | None = None) -> None:
+def evidence_cards(
+    reviews: pd.DataFrame,
+    fallback: list[dict[str, Any]] | None = None,
+) -> None:
     if reviews is not None and not reviews.empty:
         for _, rec in reviews.iterrows():
             title = str(rec.get("product_title") or "Reviewed product")
             with st.container(border=True):
                 st.markdown(f"**{title}**")
-                text = str(rec.get("review_text") or "").replace("\n", " ").strip()
+                text = _clean_review_text(rec.get("review_text"))
                 if len(text) > 360:
                     text = text[:359].rstrip() + "…"
                 st.write(text)
@@ -50,7 +64,6 @@ def evidence_cards(reviews: pd.DataFrame, fallback: list[dict[str, Any]] | None 
                     f"**Intent:** {_label(rec.get('intent'))}"
                 )
                 st.caption(
-                    f"Relevance: {_label(rec.get('relevant'))} · "
                     f"Pain point: {_label(rec.get('pain_point'))} · "
                     f"Brand fit: {_label(rec.get('brand_fit'))} · "
                     f"Confidence: {_label(rec.get('confidence'))}"
@@ -60,9 +73,12 @@ def evidence_cards(reviews: pd.DataFrame, fallback: list[dict[str, Any]] | None 
         for item in fallback:
             with st.container(border=True):
                 st.markdown(f"**{item.get('product_title') or 'Reviewed product'}**")
-                st.write(item.get("quote") or "Review text unavailable.")
-                st.caption(
-                    f"Sentiment: {item.get('sentiment')} · Intent: {item.get('intent')}"
+                text = _clean_review_text(item.get("quote") or "Review text unavailable.")
+                st.write(text)
+                st.write(
+                    f"**Flavor:** {_label(item.get('flavor'))} · "
+                    f"**Sentiment:** {_label(item.get('sentiment'))} · "
+                    f"**Intent:** {_label(item.get('intent'))}"
                 )
         return
     st.info("No stored review excerpts are available for this flavor.")
