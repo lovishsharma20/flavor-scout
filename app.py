@@ -20,7 +20,7 @@ if str(ROOT) not in sys.path:
 from src.dashboard.charts import mentions_bar_chart
 from src.dashboard.components import evidence_cards, flavor_metric_strip, kpi_row
 from src.dashboard.data_loader import DashboardDataError, load_dashboard_data, load_review_evidence
-from src.dashboard.methodology import HOW_IT_WORKS, LAYOUT_RATIONALE, PIPELINE_STEPS
+from src.dashboard.methodology import HOW_IT_WORKS, PIPELINE_STEPS
 
 st.set_page_config(
     page_title="Flavor Scout | HealthKart",
@@ -45,8 +45,6 @@ CSS = """
     .status-pill { display: inline-block; background: #2F6F4E; color: #F4EFE8;
         font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em;
         padding: 0.2rem 0.55rem; border-radius: 999px; }
-    .warn-note { background: #F3E6D4; color: #5C3B16; padding: 0.7rem 0.9rem;
-        border-radius: 10px; font-size: 0.92rem; }
     .pipe { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;
         font-size: 0.88rem; color: #3F3A36; }
     .pipe span { background: #EFEAE3; padding: 0.35rem 0.55rem; border-radius: 8px; }
@@ -65,11 +63,6 @@ def _cached_bundle():
 @st.cache_data(show_spinner=False)
 def _cached_evidence(flavor: str) -> pd.DataFrame:
     return load_review_evidence(flavor, limit=5)
-
-
-def _init_state(default_flavor: str) -> None:
-    if "selected_flavor" not in st.session_state:
-        st.session_state.selected_flavor = default_flavor
 
 
 def _select(flavor: str) -> None:
@@ -93,10 +86,12 @@ def main() -> None:
 
     golden = data.golden
     default_flavor = str(golden.get("flavor") or "Strawberry")
-    _init_state(default_flavor)
     board = data.board.copy()
     flavors = board["flavor"].astype(str).tolist()
-    if st.session_state.selected_flavor not in flavors:
+    flavor_options = [default_flavor] + [f for f in flavors if f != default_flavor]
+    if "selected_flavor" not in st.session_state:
+        st.session_state.selected_flavor = default_flavor
+    if st.session_state.selected_flavor not in flavor_options:
         st.session_state.selected_flavor = default_flavor
     focus = st.session_state.selected_flavor
     selected = board[board["decision"] == "SELECTED"].sort_values(
@@ -120,41 +115,31 @@ def main() -> None:
             unsafe_allow_html=True,
         )
     with right:
-        with st.expander("How it works", expanded=False):
-            st.write(HOW_IT_WORKS)
-            st.caption(LAYOUT_RATIONALE)
+        with st.expander("How to read this dashboard", expanded=False):
+            st.write(
+                "Trend Wall shows what consumers mentioned. "
+                "Decision Engine shows what is worth pursuing. "
+                "Golden Candidate is the strongest opportunity. "
+                "Evidence and methodology explain why, and what is missing."
+            )
 
     st.markdown("### Market pulse")
     kpi_row(data.stats, int(len(selected)))
-    st.caption(
-        f"Scoring candidates: {int(data.stats.get('flavors_eligible_for_scoring') or len(board))} · "
-        "Purchase/request signals: none detected · Growth signal unavailable"
-    )
 
     st.markdown("### Trend Wall")
-    st.caption(
-        "What consumers in this dataset mentioned as eligible flavor concepts. "
-        "A ranked bar chart is used so magnitudes can be compared directly."
-    )
+    st.caption("What consumers in this dataset mentioned as eligible flavor concepts.")
     st.altair_chart(mentions_bar_chart(board, focus), width="stretch")
-    st.markdown(
-        '<div class="warn-note">Growth signal unavailable: insufficient reliable temporal evidence. '
-        "No explicit purchase/request signals detected.</div>",
-        unsafe_allow_html=True,
-    )
-    st.selectbox("Inspect a flavor", options=flavors, key="selected_flavor")
-    focus = st.session_state.selected_flavor
-    focus_row = board.loc[board["flavor"].astype(str) == focus].iloc[0]
-    flavor_metric_strip(focus_row)
-    st.caption(str(focus_row.get("decision_reason") or ""))
 
     st.markdown("### Decision Engine")
-    st.caption("Viable opportunities versus ideas that did not clear the project thresholds.")
+    st.caption(
+        "What is worth pursuing. "
+        "Purchase/request signals: none detected · Reliable growth signal: unavailable"
+    )
     col_s, col_r = st.columns(2)
     with col_s:
-        st.markdown("**Selected**")
+        st.markdown(f"**SELECTED — {len(selected)} opportunities**")
         for _, row in selected.iterrows():
-            label = f"{row['flavor']}  ·  {float(row['opportunity_score']):.2f}  ·  {row['confidence']}"
+            label = f"{row['flavor']} · {float(row['opportunity_score']):.2f} · {row['confidence']}"
             st.button(
                 label,
                 key=f"sel_{row['flavor']}",
@@ -164,9 +149,9 @@ def main() -> None:
                 args=(str(row["flavor"]),),
             )
     with col_r:
-        st.markdown("**Rejected**")
+        st.markdown(f"**REJECTED — {len(rejected)} opportunities**")
         for _, row in rejected.iterrows():
-            label = f"{row['flavor']}  ·  {float(row['opportunity_score']):.2f}  ·  {row['confidence']}"
+            label = f"{row['flavor']} · {float(row['opportunity_score']):.2f} · {row['confidence']}"
             st.button(
                 label,
                 key=f"rej_{row['flavor']}",
@@ -197,24 +182,23 @@ def main() -> None:
     g4.metric("Confidence", str(golden.get("confidence") or ""))
     st.markdown("**Why this works**")
     st.write(golden.get("why_it_works") or "")
-    st.info(
-        f"Recommended brand: **{golden.get('recommended_brand') or 'Needs validation'}**. "
-        f"{golden.get('recommended_brand_rationale') or ''}"
+    st.write("**Brand recommendation: Needs validation**")
+    st.caption(
+        "Current evidence is not sufficient to assign Strawberry to a specific HealthKart brand."
     )
-    with st.expander("HealthKart brand map (assignment context)"):
-        st.write("MuscleBlaze → performance / gym / protein")
-        st.write("HK Vitals → wellness / lifestyle")
-        st.write("TrueBasics → premium / functional wellness")
-        st.caption("A brand is assigned only when supporting SKUs clearly match that domain.")
 
     st.markdown("### Evidence")
-    st.caption("Structured classifications from real Amazon reviews. Quotes are truncated source text.")
+    st.caption("Reviews that contributed to eligible flavor analysis for the inspected opportunity.")
+    st.selectbox("Inspect a flavor", options=flavor_options, key="selected_flavor")
+    focus = st.session_state.selected_flavor
+    focus_row = board.loc[board["flavor"].astype(str) == focus].iloc[0]
+    flavor_metric_strip(focus_row)
     try:
         evidence = _cached_evidence(focus)
     except Exception:
         evidence = pd.DataFrame()
     fallback = None
-    if focus == str(golden.get("flavor")):
+    if evidence.empty and focus == str(golden.get("flavor")):
         fallback = (golden.get("evidence_summary") or {}).get("representative_reviews")
     evidence_cards(evidence, fallback)
 
@@ -231,12 +215,17 @@ def main() -> None:
             f"- Relevant reviews: {int(data.stats.get('relevant_reviews') or 0):,}\n"
             f"- Eligible flavor mentions: {int(data.stats.get('eligible_flavor_mentions') or 0):,}\n"
             f"- Scoring candidates: {int(data.stats.get('flavors_eligible_for_scoring') or 0)}\n"
-            "- Purchase/request signals: 0\n"
-            "- Reliable growth signal: unavailable\n"
+            f"- Selected opportunities: {len(selected)}\n"
+            "- Purchase/request signals: 0. These were not used in the Opportunity Score "
+            "and were not treated as automatic reject reasons.\n"
+            "- Reliable growth signal: unavailable. A stored Strawberry time split was not used as trend growth.\n"
             "- Opportunity score used Demand + Sentiment + Brand Fit because Purchase Intent and Growth were unavailable.\n"
+            f"- Brand: {golden.get('recommended_brand_rationale') or 'Needs validation.'}\n"
+            "- MuscleBlaze = performance/gym/protein; HK Vitals = wellness/lifestyle; "
+            "TrueBasics = premium/functional wellness. No brand is forced without SKU evidence.\n"
+            "- Evidence cards show only eligible, non-gear reviews for the inspected flavor.\n"
             "- Recommendation is based on this dataset and is not a guaranteed commercial outcome."
         )
-        st.caption(LAYOUT_RATIONALE)
 
 
 main()

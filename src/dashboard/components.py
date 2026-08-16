@@ -44,12 +44,13 @@ def evidence_cards(reviews: pd.DataFrame, fallback: list[dict[str, Any]] | None 
                 if len(text) > 360:
                     text = text[:359].rstrip() + "…"
                 st.write(text)
-                m1, m2, m3, m4 = st.columns(4)
-                m1.caption(f"Relevance: {_label(rec.get('relevant'))}")
-                m2.caption(f"Flavor: {_label(rec.get('flavor'))}")
-                m3.caption(f"Sentiment: {_label(rec.get('sentiment'))}")
-                m4.caption(f"Intent: {_label(rec.get('intent'))}")
+                st.write(
+                    f"**Flavor:** {_label(rec.get('flavor'))} · "
+                    f"**Sentiment:** {_label(rec.get('sentiment'))} · "
+                    f"**Intent:** {_label(rec.get('intent'))}"
+                )
                 st.caption(
+                    f"Relevance: {_label(rec.get('relevant'))} · "
                     f"Pain point: {_label(rec.get('pain_point'))} · "
                     f"Brand fit: {_label(rec.get('brand_fit'))} · "
                     f"Confidence: {_label(rec.get('confidence'))}"

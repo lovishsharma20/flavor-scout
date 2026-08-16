@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,15 @@ REQUIRED = {
     "decisions": PROCESSED / "decision_engine_results.csv",
     "golden": PROCESSED / "golden_candidate.json",
 }
+
+
+# Presentation-only extra filter for container SKUs that slipped past older
+# classifications. Does not rewrite analyzed_reviews.csv.
+_EVIDENCE_GEAR_RE = re.compile(
+    r"\b(flask|softflask|hydrapak|soft flask|gel flask|water bottle|sport bottle|"
+    r"shaker|tumbler|hydration (pack|backpack|bladder))\b",
+    re.I,
+)
 
 
 class DashboardDataError(Exception):
@@ -119,6 +129,8 @@ def load_review_evidence(flavor: str, limit: int = 5) -> pd.DataFrame:
     wanted = [
         "review_key",
         "product_title",
+        "product_categories",
+        "main_category",
         "review_text",
         "relevant",
         "flavor",
@@ -131,5 +143,17 @@ def load_review_evidence(flavor: str, limit: int = 5) -> pd.DataFrame:
     header = pd.read_csv(reviews_path, nrows=0)
     cols = [c for c in wanted if c in header.columns]
     reviews = pd.read_csv(reviews_path, usecols=cols)
-    matched = reviews[reviews["review_key"].astype(str).isin(keys)].head(limit)
-    return matched
+    matched = reviews[reviews["review_key"].astype(str).isin(keys)].copy()
+    if "relevant" in matched.columns:
+        matched = matched[
+            matched["relevant"].astype(str).str.lower().isin(["true", "1", "yes"])
+        ]
+    from src.classification.classify_reviews import is_gear_container_sku
+
+    if not matched.empty:
+        gear = matched.apply(is_gear_container_sku, axis=1)
+        title_gear = matched["product_title"].fillna("").astype(str).map(
+            lambda t: bool(_EVIDENCE_GEAR_RE.search(t))
+        )
+        matched = matched.loc[~gear & ~title_gear]
+    return matched.head(limit)

@@ -35,3 +35,5 @@ Purchase intent is 0 and growth is unavailable. Showing those gaps is analytical
 ## 8. How the UI avoids treating LLM output as unquestionable truth
 
 The pipeline is printed as: real reviews → LLM classification → structured evidence → deterministic aggregation → score → Decision Engine → Golden Candidate. Copy states that the LLM structures evidence and does not invent the final flavor. Missing growth and purchase intent are labeled as unavailable, never filled with placeholder percentages.
+
+Evidence cards only show reviews that were eligible for aggregation for the inspected flavor, and exclude gear/container SKUs even if an older classification marked them relevant. The inspect control defaults to the Golden Candidate (Strawberry) so the first view is one consistent story.
