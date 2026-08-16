@@ -1,0 +1,17 @@
+{
+  "source_reviews": 7931,
+  "classified_reviews": 7931,
+  "relevant_reviews": 486,
+  "irrelevant_reviews": 7445,
+  "raw_nonzero_flavor_mentions": 82,
+  "eligible_flavor_mentions": 50,
+  "unique_eligible_flavors": 24,
+  "excluded_meal_or_dish": 26,
+  "excluded_generic_non_launchable": 6,
+  "normalization_merges": 2,
+  "growth_method": "midpoint_of_eligible_window",
+  "growth_midpoint_utc": "2020-04-20T00:29:23.695000+00:00",
+  "min_mentions_for_scoring": 2,
+  "flavors_eligible_for_scoring": 11,
+  "flavors_with_numeric_growth": 1
+}

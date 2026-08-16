@@ -1,0 +1,26 @@
+{
+  "scoring_flavors": 11,
+  "mention_min": 2.0,
+  "mention_max": 9.0,
+  "weights": {
+    "documented_baseline": {
+      "demand": 0.3,
+      "growth": 0.2,
+      "sentiment": 0.2,
+      "purchase_intent": 0.15,
+      "brand_fit": 0.15
+    },
+    "applied_after_renormalizing_available_65": {
+      "demand": 0.46153846153846156,
+      "sentiment": 0.3076923076923077,
+      "brand_fit": 0.23076923076923078
+    },
+    "excluded": [
+      "growth",
+      "purchase_intent"
+    ],
+    "exclusion_reason": "purchase_intent_count and request_count are 0 on all eligible mentions; temporal growth is not reliable at this sample size."
+  },
+  "top_flavor": "Strawberry",
+  "top_score": 91.4538
+}

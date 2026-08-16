@@ -19,6 +19,10 @@ Thumbs.db
 # Data (keep folder structure via .gitkeep)
 data/raw/*.csv
 data/processed/*.csv
+!data/processed/flavor_trends.csv
+!data/processed/flavor_trends_stats.json
+!data/processed/opportunity_scores.csv
+!data/processed/opportunity_scores_stats.json
 *.log
 
 # Hugging Face / datasets cache (if created locally)
