@@ -146,7 +146,7 @@ def load_review_evidence(flavor: str, limit: int = 5) -> pd.DataFrame:
         matched = matched[
             matched["relevant"].astype(str).str.lower().isin(["true", "1", "yes"])
         ]
-    from src.classification.classify_reviews import is_gear_container_sku
+    from src.cleaning.product_filters import is_gear_container_sku
 
     if not matched.empty:
         gear = matched.apply(is_gear_container_sku, axis=1)

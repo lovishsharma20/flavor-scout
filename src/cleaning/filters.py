@@ -1,5 +1,5 @@
 """
-Reusable, rule-based cleaning helpers for Flavor Scout Reddit text.
+Reusable, rule-based cleaning helpers for Flavor Scout review text.
 """
 
 from __future__ import annotations
