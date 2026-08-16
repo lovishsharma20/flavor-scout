@@ -1,0 +1,36 @@
+{
+  "total_candidates": 11,
+  "selected_count": 4,
+  "rejected_count": 7,
+  "thresholds": {
+    "opportunity_score_min": 50.0,
+    "mentions_min": 2,
+    "positive_rate_min": 0.5,
+    "brand_fit_score_min": 50.0,
+    "confidence_allowed": [
+      "HIGH",
+      "MEDIUM"
+    ],
+    "note": "Project decision thresholds, not values supplied by Amazon Reviews 2023. brand_fit_score_min is 50 on the 0\u2013100 scale stored in opportunity_scores.csv (same rule as 0.50 on the 0\u20131 aggregation scale)."
+  },
+  "unavailable_evidence": {
+    "purchase_intent": false,
+    "growth": false,
+    "note": "purchase_intent_count and request_count are 0; flavor-level growth is not reliable. Missing evidence did not auto-reject."
+  },
+  "top_selected_candidates": [
+    "Strawberry",
+    "Chocolate",
+    "Lemonade",
+    "Banana"
+  ],
+  "rejected_candidates": [
+    "Raspberry Lime",
+    "Coconut",
+    "Blueberry",
+    "Orange",
+    "Cranberry",
+    "Lemon Lime",
+    "Birthday Cake"
+  ]
+}

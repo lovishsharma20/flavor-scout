@@ -23,6 +23,8 @@ data/processed/*.csv
 !data/processed/flavor_trends_stats.json
 !data/processed/opportunity_scores.csv
 !data/processed/opportunity_scores_stats.json
+!data/processed/decision_engine_results.csv
+!data/processed/decision_engine_stats.json
 *.log
 
 # Hugging Face / datasets cache (if created locally)
