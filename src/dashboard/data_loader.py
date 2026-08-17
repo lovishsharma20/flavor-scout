@@ -108,12 +108,16 @@ def load_dashboard_data() -> DashboardData:
     )
 
 
-def load_review_evidence(flavor: str, limit: int = 5) -> tuple[pd.DataFrame, int]:
-    """Load a few classified reviews for one eligible flavor. Cached by the UI."""
+def load_review_evidence(flavor: str, limit: int = 5) -> tuple[pd.DataFrame, int | None]:
+    """Load a few classified reviews for one eligible flavor. Cached by the UI.
+
+    Returns (rows, eligible_total). eligible_total is the full eligible count when
+    local classified CSVs are present; None when using the small hosted extract.
+    """
     qc_path = PROCESSED / "flavor_mention_qc.csv"
     reviews_path = PROCESSED / "analyzed_reviews.csv"
     if not qc_path.exists() or not reviews_path.exists():
-        return pd.DataFrame(), 0
+        return _load_curated_evidence(flavor)
     qc = pd.read_csv(
         qc_path,
         usecols=["review_key", "aggregation_flavor", "eligible"],
@@ -156,3 +160,15 @@ def load_review_evidence(flavor: str, limit: int = 5) -> tuple[pd.DataFrame, int
         matched = matched.loc[~gear & ~title_gear]
     eligible_total = int(len(matched))
     return matched.head(limit), eligible_total
+
+
+def _load_curated_evidence(flavor: str) -> tuple[pd.DataFrame, None]:
+    """Hosted/GitHub subset: real reviews packaged in flavor_evidence.csv."""
+    curated_path = PROCESSED / "flavor_evidence.csv"
+    if not curated_path.exists():
+        return pd.DataFrame(), None
+    curated = pd.read_csv(curated_path)
+    if curated.empty or "flavor" not in curated.columns:
+        return pd.DataFrame(), None
+    matched = curated[curated["flavor"].astype(str) == str(flavor)].copy()
+    return matched, None

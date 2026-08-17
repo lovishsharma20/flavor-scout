@@ -185,18 +185,22 @@ def main() -> None:
         st.caption(f"Representative consumer reviews supporting {focus}.")
     focus_row = board.loc[board["flavor"].astype(str) == focus].iloc[0]
     flavor_metric_strip(focus_row)
-    eligible_total = int(focus_row["mentions"])
     try:
         evidence, eligible_total = _cached_evidence(focus)
     except Exception:
         evidence = pd.DataFrame()
+        eligible_total = int(focus_row["mentions"])
     fallback = None
     if evidence.empty and focus == golden_name:
         fallback = (golden.get("evidence_summary") or {}).get("representative_reviews")
+    using_json_fallback = bool(fallback) and (evidence is None or evidence.empty)
     shown = 0 if evidence is None or evidence.empty else len(evidence)
-    if shown == 0 and fallback:
+    if using_json_fallback:
         shown = len(fallback)
-    if shown:
+        st.caption(f"Showing {shown} representative reviews")
+    elif shown and eligible_total is None:
+        st.caption(f"Showing {shown} representative reviews")
+    elif shown:
         st.caption(f"Showing {shown} of {eligible_total} eligible mentions")
     evidence_cards(evidence, fallback)
 

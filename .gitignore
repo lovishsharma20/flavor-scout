@@ -24,6 +24,7 @@ data/processed/*.json
 !data/processed/decision_engine_stats.json
 !data/processed/golden_candidate.csv
 !data/processed/golden_candidate.json
+!data/processed/flavor_evidence.csv
 *.log
 
 .streamlit/secrets.toml
